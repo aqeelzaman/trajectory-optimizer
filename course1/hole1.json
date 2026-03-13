@@ -1,0 +1,7 @@
+{
+  "hole_id": "hole1",
+  "ball_pos": [100, 500],
+  "ball_radius": 15,
+  "pin_pos": [300, 100],
+  "obstacles": [[200, 300, 300, 400]]
+}
