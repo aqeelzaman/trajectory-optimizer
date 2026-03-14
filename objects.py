@@ -43,7 +43,6 @@ class GameObject:
         """
         if not self.type == "ui":
             return
-        self.tint_color = color
         self.hover_surface = get_tinted_surface(self.base_surface, tint_color=color)
 
     def draw(self, win):
