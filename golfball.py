@@ -1,10 +1,11 @@
-import pygame
+from pygame.sprite import Sprite, collide_rect
 from pygame.math import Vector2
+from pygame import Surface, SRCALPHA, draw
 from utils import import_assets
 from objects import GameObject
 
 
-class GolfBall(pygame.sprite.Sprite):
+class GolfBall(Sprite):
     """
     Golf ball object, holds info of each ball.
     It also has functionality pertaining to this ball object.
@@ -24,6 +25,7 @@ class GolfBall(pygame.sprite.Sprite):
         self.x_velocity = 0
         self.y_velocity = 0
         self.friction = 0.98
+        self.surface_friction = 1
         self.release_position = self.rect.center
         self.power = 0
         self.angle = 0
@@ -35,29 +37,61 @@ class GolfBall(pygame.sprite.Sprite):
         self.in_hole = False
         self.overshot = False
 
+        self.halo = None
         self.power_line = None
         self.guide_circle = None
         self.radius_factor = 6
+        self.energy = 0
+        self.shots_taken = 0
 
         self.pin = None
         self.obstacles = []
 
-    def set_environment(self, pin, obstacles):
+    def set_environment(self, pin, obstacles, sand):
         """
         Set the goal and obstacles to interact with.
         """
         self.pin = pin
         self.obstacles = obstacles
+        self.sand = sand
+
+    def get_info(self):
+        """
+        Return the information of this golf ball.
+        Includes position, radius and max radius of effect.
+        """
+
+        return (self.x, self.y), self.radius, self.radius * (self.radius_factor / 2)
+
+    def set_ghost_color(self, halo_color):
+        """
+        Set halo color for this golf ball to indicate relative energy level.
+        """
+        halo_surface = Surface((self.radius * 2, self.radius * 2), SRCALPHA)
+        draw.circle(
+            halo_surface,
+            halo_color,
+            (self.radius, self.radius),
+            self.radius / 1.6,
+            width=2,
+        )
+        self.halo = GameObject(
+            id="halo",
+            type="circle",
+            surface=halo_surface,
+            pos=(
+                self.rect.centerx - self.radius,
+                self.rect.centery - self.radius,
+            ),
+        )
 
     def draw_guide_circle(self):
         """
         Draw a guide circle showing the max area of effect for swing power.
         """
         max_radius = self.radius * (self.radius_factor / 2)
-        guide_surface = pygame.Surface(
-            (max_radius * 2, max_radius * 2), pygame.SRCALPHA
-        )
-        pygame.draw.circle(
+        guide_surface = Surface((max_radius * 2, max_radius * 2), SRCALPHA)
+        draw.circle(
             guide_surface,
             (255, 255, 255, 128),
             (max_radius, max_radius),
@@ -86,8 +120,8 @@ class GolfBall(pygame.sprite.Sprite):
             power_offset.scale_to_length(max_length)
 
         local_center = Vector2(max_length, max_length)
-        line_surface = pygame.Surface((max_length * 2, max_length * 2), pygame.SRCALPHA)
-        pygame.draw.line(
+        line_surface = Surface((max_length * 2, max_length * 2), SRCALPHA)
+        draw.line(
             line_surface,
             (255, 255, 255, 200),
             local_center,
@@ -105,6 +139,7 @@ class GolfBall(pygame.sprite.Sprite):
         """
         Set the power, angle, velocities once a swing has been taken.
         """
+        self.shots_taken += 1
         max_radius = self.radius * (self.radius_factor / 2)
         center = Vector2(self.rect.center)
         drag_vector = Vector2(mouse_drag_end_pos) - center
@@ -127,44 +162,41 @@ class GolfBall(pygame.sprite.Sprite):
         """
         Check if golf ball is colliding on any obstacles in the way.
         """
+        for snd in self.sand:
+            if collide_rect(self, snd):
+                self.surface_friction = 0.9
+                break
+            else:
+                self.surface_friction = 1
+
         for obs in self.obstacles:
-            if self.is_colliding(obs):
+            if collide_rect(self, obs):
+                # TODO: Change this so that it can support non-square collisions
                 if abs(self.rect.centerx - obs.rect.centerx) > abs(
                     self.rect.centery - obs.rect.centery
                 ):
                     self.x_velocity *= -1
                 else:
                     self.y_velocity *= -1
+                break
 
-    def is_colliding(self, obs):
-        """
-        Returns True if ball is colliding with the current obstacle.
-        """
-        closest_x = max(obs.rect.left, min(self.x, obs.rect.right))
-        closest_y = max(obs.rect.top, min(self.y, obs.rect.bottom))
-
-        dx = self.x - closest_x
-        dy = self.y - closest_y
-
-        return (dx**2 + dy**2) < (self.radius / 2) ** 2
-
-    def move(self):
-        """
-        Move the ball in the direction with given velocity. Reduce velocity each loop
-        to account for friction. If ball is moving below threshold velocity, make it stopm completely.
-        """
         if self.x - self.radius / 2 < 0 or self.x + self.radius / 2 > 400:
             self.x_velocity *= -1
         if self.y - self.radius / 2 < 0 or self.y + self.radius / 2 > 600:
             self.y_velocity *= -1
 
+    def move(self):
+        """
+        Move the ball in the direction with given velocity. Reduce velocity each loop
+        to account for friction. If ball is moving below threshold velocity, make it stop completely.
+        """
         self.x += self.x_velocity
         self.y += self.y_velocity
 
         self.rect.center = (self.x, self.y)
 
-        self.x_velocity *= self.friction
-        self.y_velocity *= self.friction
+        self.x_velocity *= self.friction * self.surface_friction
+        self.y_velocity *= self.friction * self.surface_friction
 
         if abs(self.x_velocity) < 0.05:
             self.x_velocity = 0

@@ -1,7 +1,8 @@
-import pygame
-from scenes import MainMenuScene, CourseScene
+from pygame import init, time, event, QUIT, quit, display, mouse, SCALED
+from main_menu_scene import MainMenuScene
+from course_selection_scene import CourseSelectionScene
 
-pygame.init()
+init()
 
 
 class SceneManager:
@@ -14,38 +15,42 @@ class SceneManager:
     def __init__(self):
         self.scenes = {
             "main_menu": MainMenuScene(self),
-            "course1": CourseScene(self, "course1"),
+            "course_select": CourseSelectionScene(self),
         }
         self.current_scene = self.scenes["main_menu"]
 
     def switch_scene(self, new_scene):
         self.current_scene = self.scenes[new_scene]
+        self.current_scene.initiate()
+
+    def add_scene(self, scene_id, scene_obj):
+        self.scenes[scene_id] = scene_obj
 
     def run(self):
         RUNNING = True
-        CLOCK = pygame.time.Clock()
+        CLOCK = time.Clock()
         FPS = 60
 
         while RUNNING:
             CLOCK.tick(FPS)
-            events = pygame.event.get()
-            for event in events:
-                if event.type == pygame.QUIT:
+            events = event.get()
+            for e in events:
+                if e.type == QUIT:
                     RUNNING = False
                     break
 
-            mouse_pos = pygame.mouse.get_pos()
+            mouse_pos = mouse.get_pos()
             self.current_scene.check_ui_hover(mouse_pos)
             self.current_scene.handle_events(events, mouse_pos)
             self.current_scene.update()
             self.current_scene.draw(WIN)
-            pygame.display.flip()
+            display.flip()
 
-        pygame.quit()
+        quit()
 
 
-WIN = pygame.display.set_mode((600, 600), pygame.SCALED)
-pygame.display.set_caption("Hot Takes, Cold Putts")
+WIN = display.set_mode((600, 600), SCALED)
+display.set_caption("Hot Takes, Cold Putts")
 
 
 def main():
