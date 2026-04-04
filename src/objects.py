@@ -17,9 +17,11 @@ class GameObject:
         self.pos = pos
         self.visible = True
         self.text_obj = None
-        self.text = None
+        self.text = ""
+        self.text_size = 10
+        self.text_color = (0, 0, 0)
 
-        if self.type == "ui":
+        if self.type in ["ui", "textbox"]:
             self.hover_surface = get_tinted_surface(surface)
             self.base_surface = surface
             self.tint_color = "grey70"

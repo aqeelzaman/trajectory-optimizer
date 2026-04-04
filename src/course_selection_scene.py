@@ -76,6 +76,8 @@ class CourseSelectionScene(AbstractScene):
         last_y = 120
         course_file_list = sorted(listdir("courses"))
         for course_file in course_file_list:
+            if course_file[:6] != "course":
+                continue
             course_id = course_file.lstrip("course")
             if int(course_id) == 6:
                 break

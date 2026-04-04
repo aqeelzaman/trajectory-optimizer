@@ -24,12 +24,15 @@ class GolfBall(Sprite):
 
         self.x_velocity = 0
         self.y_velocity = 0
-        self.friction = 0.98
-        self.surface_friction = 1
         self.release_position = self.rect.center
         self.power = 0
         self.angle = 0
         self.overshoots = 0
+
+        self.base_friction = 0.98
+        self.surface_strength = {"grass": 1, "sand": 3, "ice": 0.5}
+        self.surface_type = "grass"
+        self.total_friction = 0.98
 
         self.interactable = True
         self.mouse_down = False
@@ -46,14 +49,18 @@ class GolfBall(Sprite):
 
         self.pin = None
         self.obstacles = []
+        self.sand = []
+        self.ice = []
+        self.path = []
 
-    def set_environment(self, pin, obstacles, sand):
+    def set_environment(self, pin, obstacles, sand, ice):
         """
         Set the goal and obstacles to interact with.
         """
         self.pin = pin
         self.obstacles = obstacles
         self.sand = sand
+        self.ice = ice
 
     def get_info(self):
         """
@@ -158,16 +165,23 @@ class GolfBall(Sprite):
         ) / self.radius_factor
         self.interactable = False
 
+        self.path.append(mouse_drag_end_pos)
+
     def check_collision(self):
         """
         Check if golf ball is colliding on any obstacles in the way.
         """
+        self.surface_type = "grass"
+
         for snd in self.sand:
             if collide_rect(self, snd):
-                self.surface_friction = 0.9
+                self.surface_type = "sand"
                 break
-            else:
-                self.surface_friction = 1
+        
+        for ice in self.ice:
+            if collide_rect(self, ice):
+                self.surface_type = "ice"
+                break
 
         for obs in self.obstacles:
             if collide_rect(self, obs):
@@ -195,8 +209,9 @@ class GolfBall(Sprite):
 
         self.rect.center = (self.x, self.y)
 
-        self.x_velocity *= self.friction * self.surface_friction
-        self.y_velocity *= self.friction * self.surface_friction
+        self.total_friction = self.base_friction ** self.surface_strength[self.surface_type]
+        self.x_velocity *= self.total_friction
+        self.y_velocity *= self.total_friction
 
         if abs(self.x_velocity) < 0.05:
             self.x_velocity = 0

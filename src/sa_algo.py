@@ -6,7 +6,7 @@ NUM_CANDIDATES = 12
 INITIAL_TEMPERATURE = 100.0
 COOLING_RATE = 0.97
 MIN_TEMPERATURE = 0.1
-MAX_ITERATIONS = 500
+MAX_ITERATIONS = 20
 
 
 class SimulatedAnnealer:
@@ -18,12 +18,18 @@ class SimulatedAnnealer:
     def __init__(self, hole_position):
         self.hole_position = hole_position
 
+        self.initial_temperature = INITIAL_TEMPERATURE
         self.temperature = INITIAL_TEMPERATURE
         self.iteration = 0
+        self.max_iterations = MAX_ITERATIONS
+        self.cooling_schedule = "None"
 
         self.current_golf_ball = None
+        self.least_energy_ball = None
         self.energy = None
         self.num_shots = 0
+
+        self.surface_strength = {"grass": 1, "sand": 3, "ice": 0.5}
 
         self.w_distance = 1.0
         self.w_shots = 5.0
@@ -37,7 +43,7 @@ class SimulatedAnnealer:
         self.step_count = 0
         self.switch_step = {0: self.step0, 1: self.step1, 2: self.step2, 3: self.step3}
 
-    def initialize(self, hole_data, obstacles, sand):
+    def initialize(self, hole_data, obstacles, sand, ice):
         """
         Obtains the environment data to initialize for the current hole.
         """
@@ -46,6 +52,7 @@ class SimulatedAnnealer:
         radius = hole_data["ball_radius"]
         self.obstacles = obstacles
         self.sand = sand
+        self.ice = ice
 
         initial_energy = self.compute_energy(
             position=start_position, shots_taken=0, n_overshots=0
@@ -53,7 +60,9 @@ class SimulatedAnnealer:
 
         self.energy = initial_energy
         self.current_golf_ball = GolfBall(start_position[0], start_position[1], radius)
-        self.current_golf_ball.set_environment(self.hole_position, obstacles, sand)
+        self.current_golf_ball.set_environment(self.hole_position, obstacles, sand, ice)
+        self.current_golf_ball.surface_strength = self.surface_strength
+        self.least_energy_ball = self.current_golf_ball
 
     def generate_candidate_shots(self, center_pos, radius, max_radius):
         """
@@ -72,8 +81,10 @@ class SimulatedAnnealer:
 
             release_pos = (center_pos[0] + dx, center_pos[1] + dy)
             cand = GolfBall(center_pos[0], center_pos[1], radius)
-            cand.set_environment(self.hole_position, self.obstacles, self.sand)
+            cand.set_environment(self.hole_position, self.obstacles, self.sand, self.ice)
+            cand.path = self.current_golf_ball.path[:]
             cand.shots_taken = self.num_shots
+            cand.surface_strength = self.surface_strength
             cand.set_release_position(release_pos)
             self.candidates.append(cand)
 
@@ -116,7 +127,7 @@ class SimulatedAnnealer:
         self.switch_step[self.step_count]()
         if self.hole_completed:
             print(
-                f"Found winning golf ball {self.final_ball} with {self.final_ball.shots_taken} shots."
+                f"Found winning golf ball {self.final_ball} with {self.final_ball.shots_taken - 1} shots."
             )
             return
         if self.ready:
@@ -139,7 +150,7 @@ class SimulatedAnnealer:
 
         self.ready = True
         least_energy = self.energy
-        least_energy_ball = self.current_golf_ball
+        self.least_energy_ball = self.current_golf_ball
 
         for golf_ball in self.candidates:
             golf_ball.loop()
@@ -157,7 +168,7 @@ class SimulatedAnnealer:
 
             if golf_ball.energy <= least_energy:
                 least_energy = golf_ball.energy
-                least_energy_ball = golf_ball
+                self.least_energy_ball = golf_ball
 
             if golf_ball.energy <= self.energy:
                 golf_ball.set_ghost_color((255, 255, 0))
@@ -167,7 +178,7 @@ class SimulatedAnnealer:
             if not golf_ball.interactable:
                 self.ready = False
 
-        least_energy_ball.set_ghost_color((0, 255, 0))
+        self.least_energy_ball.set_ghost_color((0, 255, 0))
         self.current_golf_ball.set_ghost_color((0, 0, 255))
 
     def step2(self):

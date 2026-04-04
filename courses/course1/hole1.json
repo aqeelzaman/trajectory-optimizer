@@ -1,10 +1,1 @@
-{
-  "hole_id": "hole1",
-  "ball_pos": [100, 500],
-  "ball_radius": 15,
-  "pin_pos": [300, 100],
-  "obstacles": [[200, 300, 300, 400]],
-  "sand": [[10, 10, 200, 200]],
-  "best_score": 2,
-  "best_bot_score": 100
-}
+{"hole_id": "hole1", "ball_pos": [100, 500], "ball_radius": 15, "pin_pos": [300, 100], "obstacles": [[200, 300, 300, 400]], "sand": [[10, 10, 200, 200]], "ice": [[300, 300, 400, 400]], "best_score": 1, "best_bot_score": 2, "best_bot_path": [[86.96749743671967, 535.3461001146629], [173.13732222308255, 223.3305650122706]], "best_bot_params": [1, 3, 0.5]}

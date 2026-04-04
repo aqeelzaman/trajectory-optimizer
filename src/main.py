@@ -4,7 +4,6 @@ from course_selection_scene import CourseSelectionScene
 
 init()
 
-
 class SceneManager:
     """
     Main scene manager for the game instance.
@@ -18,6 +17,7 @@ class SceneManager:
             "course_select": CourseSelectionScene(self),
         }
         self.current_scene = self.scenes["main_menu"]
+        self.fps_multiplier = 3
 
     def switch_scene(self, new_scene):
         self.current_scene = self.scenes[new_scene]
@@ -29,10 +29,9 @@ class SceneManager:
     def run(self):
         RUNNING = True
         CLOCK = time.Clock()
-        FPS = 60
 
         while RUNNING:
-            CLOCK.tick(FPS)
+            CLOCK.tick(60 * self.fps_multiplier)
             events = event.get()
             for e in events:
                 if e.type == QUIT:
