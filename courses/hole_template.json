@@ -1,0 +1,13 @@
+{
+  "hole_id": "hole_id",
+  "ball_pos": [0, 0],
+  "ball_radius": 15,
+  "pin_pos": [300, 300],
+  "obstacles": [[0, 0, 100, 100]],
+  "sand": [[0, 0, 100, 100]],
+  "ice": [[0, 0, 100, 100]],
+  "best_score": 100,
+  "best_bot_score": 100,
+  "best_bot_path": [],
+  "best_bot_params": []
+}

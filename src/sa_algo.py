@@ -11,7 +11,7 @@ MAX_ITERATIONS = 20
 
 class SimulatedAnnealer:
     """
-    Simulated Annealing class which holds the algorithm, heuristics, 
+    Simulated Annealing class which holds the algorithm, heuristics,
     and the running functionality which attaches to the game loop.
     """
 
@@ -47,7 +47,6 @@ class SimulatedAnnealer:
         """
         Obtains the environment data to initialize for the current hole.
         """
-
         start_position = hole_data["ball_pos"]
         radius = hole_data["ball_radius"]
         self.obstacles = obstacles
@@ -68,7 +67,6 @@ class SimulatedAnnealer:
         """
         Generates next neighbors for current golf ball by choosing random angle and power values.
         """
-
         self.num_shots += 1
         self.candidates = []
 
@@ -81,7 +79,9 @@ class SimulatedAnnealer:
 
             release_pos = (center_pos[0] + dx, center_pos[1] + dy)
             cand = GolfBall(center_pos[0], center_pos[1], radius)
-            cand.set_environment(self.hole_position, self.obstacles, self.sand, self.ice)
+            cand.set_environment(
+                self.hole_position, self.obstacles, self.sand, self.ice
+            )
             cand.path = self.current_golf_ball.path[:]
             cand.shots_taken = self.num_shots
             cand.surface_strength = self.surface_strength
@@ -111,7 +111,6 @@ class SimulatedAnnealer:
         From the possible candidates, choose one for the next step.
         Then update the current golf ball to be this chosen candidate.
         """
-
         self.current_golf_ball = candidate
         pos = (candidate.x, candidate.y)
         shots = candidate.shots_taken
@@ -123,12 +122,8 @@ class SimulatedAnnealer:
         Main step function of the SA algorithm which is called every game loop.
         Depending on the current step, calls the corresponding function to run that step.
         """
-        
         self.switch_step[self.step_count]()
         if self.hole_completed:
-            print(
-                f"Found winning golf ball {self.final_ball} with {self.final_ball.shots_taken - 1} shots."
-            )
             return
         if self.ready:
             self.step_count += 1
@@ -138,7 +133,6 @@ class SimulatedAnnealer:
         """
         Get current golf ball information and generate next neighbors.
         """
-
         center_pos, radius, max_radius = self.current_golf_ball.get_info()
         self.generate_candidate_shots(center_pos, radius, max_radius)
 
@@ -147,7 +141,6 @@ class SimulatedAnnealer:
         For each candidate, run a simulation step and compute energy.
         Set ghost color and wait till all golf balls have come to a stop.
         """
-
         self.ready = True
         least_energy = self.energy
         self.least_energy_ball = self.current_golf_ball
@@ -185,14 +178,14 @@ class SimulatedAnnealer:
         """
         Find the better candidates and choose one at random.
         If no best candidates, then choose one based on acceptance probability.
+        If acceptance probability is not in favor, then stay in current state.
         """
-
         better = [g for g in self.candidates if g.energy < self.energy]
         if better:
             self.choose_candidate(random.choice(better))
             return
 
-        while self.candidates:
+        if self.candidates:
             chosen = random.choice(self.candidates)
             delta = chosen.energy - self.energy
 
@@ -202,18 +195,20 @@ class SimulatedAnnealer:
                 self.choose_candidate(chosen)
                 return
 
-            self.candidates.remove(chosen)
+        self.choose_candidate(self.current_golf_ball)
 
     def step3(self):
         """
         Update temperature and iteration count.
+        Cooling schedule is exponential [T(k+1) = alpha * T(k)]
         """
-
-        #TODO: Temperature cooling needs to be changed to a different type
         self.temperature *= COOLING_RATE
         self.iteration += 1
 
     def draw(self, win):
+        """
+        Draws this game object onto the given window.
+        """
         for golf_ball in self.candidates:
             golf_ball.draw(win)
             if golf_ball.halo:

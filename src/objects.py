@@ -28,6 +28,9 @@ class GameObject:
             self.enabled = True
 
     def edit_text(self, text, text_size=None, text_color=None):
+        """
+        Edit the text object attached to the game object.
+        """
         self.text = text
         self.text_size = text_size if text_size is not None else self.text_size
         self.text_color = text_color if text_color is not None else self.text_color
@@ -40,8 +43,11 @@ class GameObject:
             surface=text_surface,
             pos=text_rect.topleft,
         )
-    
+
     def get_text(self):
+        """
+        Return the text content attached to the game object.
+        """
         return self.text
 
     def enable_ui(self):
@@ -65,9 +71,15 @@ class GameObject:
         self.surface = self.hover_surface
 
     def toggle_visibility(self):
+        """
+        Switch from visible to invisible and vice-versa.
+        """
         self.visible = not self.visible
 
     def set_visibility(self, visible):
+        """
+        Set a fixed visibility value.
+        """
         self.visible = visible
 
     def special_tint(self, color):

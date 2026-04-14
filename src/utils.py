@@ -1,4 +1,4 @@
-from pygame.transform import scale, rotate
+from pygame.transform import smoothscale, rotate
 from pygame.image import load
 from pygame import font
 from objects import GameObject
@@ -15,7 +15,7 @@ def import_assets(path, alpha=False, x_scale=100, y_scale=100, degree=0):
     else:
         image = load(path).convert()
 
-    return rotate(scale(image, (x_scale, y_scale)), degree)
+    return rotate(smoothscale(image, (x_scale, y_scale)), degree)
 
 
 def add_ui_element(

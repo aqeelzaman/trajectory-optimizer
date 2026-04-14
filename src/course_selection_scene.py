@@ -1,7 +1,11 @@
 from abstract_scene import *
 from game_scene import CourseScene
 from os import listdir
-from pygame import MOUSEBUTTONUP
+from pygame import Surface, font, draw, MOUSEBUTTONUP, SRCALPHA
+
+
+BROWN_TINT = (245, 222, 179)
+
 
 class CourseSelectionScene(AbstractScene):
     """
@@ -14,8 +18,10 @@ class CourseSelectionScene(AbstractScene):
         self.game_objects = []
         self.ui_objects = {}
         self.load_assets()
+        self.num_courses = 0
 
         self.selected_course = None
+        self.data_area_obj = None
         self.update_ui = False
 
     def initiate(self):
@@ -34,7 +40,7 @@ class CourseSelectionScene(AbstractScene):
             "assets/background.png", x_scale=600, y_scale=600
         )
         self.ui_banner = import_assets(
-            "assets/ui_banner.png", alpha=True, x_scale=200, y_scale=50
+            "assets/ui_banner.png", alpha=True, x_scale=150, y_scale=40
         )
         self.ui_frame = import_assets(
             "assets/ui_frame.png", alpha=True, x_scale=300, y_scale=50
@@ -48,8 +54,8 @@ class CourseSelectionScene(AbstractScene):
         self.bot_button = import_assets(
             "assets/bot.png", alpha=True, x_scale=40, y_scale=40
         )
-        self.hole_placeholder = import_assets(
-            "assets/placeholder.png", x_scale=300, y_scale=300
+        self.course_details = import_assets(
+            "assets/course_details.png", x_scale=410, y_scale=273
         )
 
         self.game_objects = [
@@ -68,7 +74,7 @@ class CourseSelectionScene(AbstractScene):
         game_object = GameObject(
             id="select_text", type="message", surface=self.ui_frame, pos=(20, 20)
         )
-        game_object.special_tint((245, 222, 179))
+        game_object.special_tint(BROWN_TINT)
         game_object.edit_text("Select Course To Play", 25, "black")
         self.game_objects.append(game_object)
 
@@ -82,24 +88,33 @@ class CourseSelectionScene(AbstractScene):
             if int(course_id) == 6:
                 break
 
+            self.num_courses += 1
+
             game_object = add_ui_element(
                 course_file + "_button",
                 self.ui_banner,
                 "Course " + course_id,
                 (padding, last_y),
+                text_size=20,
             )
-            game_object.special_tint((245, 222, 179))
+            game_object.special_tint(BROWN_TINT)
             self.ui_objects[course_file + "_button"] = game_object
             self.game_objects.append(game_object)
 
             game_object = GameObject(
                 id=course_file + "_profile",
                 type="ui",
-                surface=self.hole_placeholder,
-                pos=(250, 170),
+                surface=self.course_details,
+                pos=(180, 170),
             )
             game_object.hover_surface = game_object.base_surface
             game_object.set_visibility(False)
+            draw.rect(
+                game_object.surface,
+                BROWN_TINT,
+                (238, 130, 160, 95),
+                border_radius=5,
+            )
             self.ui_objects[course_file + "_profile"] = game_object
             self.game_objects.append(game_object)
 
@@ -110,31 +125,33 @@ class CourseSelectionScene(AbstractScene):
             last_y += 70
 
         game_object = add_ui_element(
-            "back_to_menu",
-            self.ui_banner,
-            "Main Menu",
-            (padding, last_y),
+            "back_to_menu", self.ui_banner, "Main Menu", (padding, last_y), text_size=20
         )
-        game_object.special_tint((245, 222, 179))
+        game_object.special_tint(BROWN_TINT)
         self.ui_objects["back_to_menu"] = game_object
         self.game_objects.append(game_object)
 
+        padding = 250
         game_object = add_ui_element(
-            "start_game", self.blue_button, "Start/Resume", (250, 120), text_size=15
+            "start_game", self.blue_button, "Start/Resume", (padding, 120), text_size=15
         )
         game_object.set_visibility(False)
         self.ui_objects["start_game"] = game_object
         self.game_objects.append(game_object)
 
         game_object = add_ui_element(
-            "bot_button", self.bot_button, "", (380, 120), text_size=15
+            "bot_button", self.bot_button, "", (padding + 115, 120), text_size=15
         )
         game_object.set_visibility(False)
         self.ui_objects["bot_button"] = game_object
         self.game_objects.append(game_object)
 
         game_object = add_ui_element(
-            "reset_game", self.orange_button, "Reset Course", (440, 120), text_size=15
+            "reset_game",
+            self.orange_button,
+            "Reset Course",
+            (padding + 160, 120),
+            text_size=15,
         )
         game_object.set_visibility(False)
         self.ui_objects["reset_game"] = game_object
@@ -155,16 +172,13 @@ class CourseSelectionScene(AbstractScene):
                 if ui_id == "back_to_menu":
                     self.scene_manager.switch_scene("main_menu")
                 elif ui_id == "start_game":
-                    print("start game")
                     self.scene_manager.switch_scene(self.selected_course)
                 elif ui_id == "bot_button":
-                    print("start simulation")
                     self.scene_manager.scenes[self.selected_course] = CourseScene(
                         self.scene_manager, self.selected_course, True
                     )
                     self.scene_manager.switch_scene(self.selected_course)
                 elif ui_id == "reset_game":
-                    print("reset game")
                     self.scene_manager.scenes[self.selected_course] = CourseScene(
                         self.scene_manager, self.selected_course
                     )
@@ -184,6 +198,18 @@ class CourseSelectionScene(AbstractScene):
             if event.type == MOUSEBUTTONUP:
                 self.check_ui_click(mouse_pos)
 
+    def multiline_text(self, x, y, text_elements):
+        """
+        Utility function to add multiline text elements to UI.
+        """
+        text_size = 18
+        for label in text_elements:
+            FONT = font.SysFont("arial", text_size)
+            text_surface = FONT.render(label, True, (0, 0, 0))
+            text_rect = text_surface.get_rect(topleft=(x, y))
+            self.data_area.blit(text_surface, text_rect)
+            y += text_size
+
     def update(self):
         """
         Update UI for each selected course.
@@ -192,22 +218,41 @@ class CourseSelectionScene(AbstractScene):
             return
 
         if not self.selected_course:
+            if self.data_area_obj in self.game_objects:
+                self.game_objects.remove(self.data_area_obj)
+
             for ui_id in self.ui_objects.keys():
                 if ui_id in ["start_game", "reset_game", "bot_button"]:
-                    print(ui_id, "is being hidden")
                     self.ui_objects[ui_id].disable_ui()
                     self.ui_objects[ui_id].set_visibility(False)
                 elif ui_id[-7:] == "profile":
-                    print(ui_id, "is being hidden")
                     self.ui_objects[ui_id].set_visibility(False)
         else:
             for ui_id in self.ui_objects.keys():
                 if ui_id in ["start_game", "reset_game", "bot_button"]:
-                    print(ui_id, "is being shown")
                     self.ui_objects[ui_id].enable_ui()
                     self.ui_objects[ui_id].set_visibility(True)
                 elif ui_id == self.selected_course.rstrip("_button") + "_profile":
-                    print(ui_id, "is being shown")
                     self.ui_objects[ui_id].set_visibility(True)
-        print()
+
+            if self.data_area_obj in self.game_objects:
+                self.game_objects.remove(self.data_area_obj)
+
+            self.data_area = Surface((600, 600), SRCALPHA)
+            course_obj = self.scene_manager.scenes[self.selected_course]
+            text_elements = [
+                f'Course: {course_obj.course_id.lstrip("course")}',
+                f'Current Hole: {course_obj.current_hole.hole_id.lstrip("hole")}',
+                f'Best Score: {course_obj.current_hole.hole_data["best_score"]}',
+                f'Best AI Score: {course_obj.current_hole.hole_data["best_bot_score"]}',
+                f'Mode: {"Simulation" if course_obj.simulation_mode else "Manual"}',
+            ]
+
+            self.multiline_text(420, 300, text_elements)
+
+            self.data_area_obj = GameObject(
+                id="course_data", type="text", surface=self.data_area, pos=(0, 0)
+            )
+            self.game_objects.append(self.data_area_obj)
+
         self.update_ui = False

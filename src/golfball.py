@@ -177,7 +177,7 @@ class GolfBall(Sprite):
             if collide_rect(self, snd):
                 self.surface_type = "sand"
                 break
-        
+
         for ice in self.ice:
             if collide_rect(self, ice):
                 self.surface_type = "ice"
@@ -185,13 +185,28 @@ class GolfBall(Sprite):
 
         for obs in self.obstacles:
             if collide_rect(self, obs):
-                # TODO: Change this so that it can support non-square collisions
-                if abs(self.rect.centerx - obs.rect.centerx) > abs(
-                    self.rect.centery - obs.rect.centery
-                ):
+                overlap_left = self.rect.right + 1 - obs.rect.left
+                overlap_right = obs.rect.right - self.rect.left - 1
+                overlap_top = self.rect.bottom + 1 - obs.rect.top
+                overlap_bottom = obs.rect.bottom - self.rect.top - 1
+
+                min_overlap = min(
+                    overlap_left, overlap_right, overlap_top, overlap_bottom
+                )
+
+                if min_overlap == overlap_left:
+                    self.rect.right = obs.rect.left - 2
                     self.x_velocity *= -1
-                else:
+                elif min_overlap == overlap_right:
+                    self.rect.left = obs.rect.right + 2
+                    self.x_velocity *= -1
+                elif min_overlap == overlap_top:
+                    self.rect.bottom = obs.rect.top - 2
                     self.y_velocity *= -1
+                elif min_overlap == overlap_bottom:
+                    self.rect.top = obs.rect.bottom + 2
+                    self.y_velocity *= -1
+
                 break
 
         if self.x - self.radius / 2 < 0 or self.x + self.radius / 2 > 400:
@@ -209,7 +224,9 @@ class GolfBall(Sprite):
 
         self.rect.center = (self.x, self.y)
 
-        self.total_friction = self.base_friction ** self.surface_strength[self.surface_type]
+        self.total_friction = (
+            self.base_friction ** self.surface_strength[self.surface_type]
+        )
         self.x_velocity *= self.total_friction
         self.y_velocity *= self.total_friction
 

@@ -55,11 +55,11 @@ class CourseScene(AbstractScene):
             "max_episodes": 10,
             "max_iterations": 20,
             "initial_temperature": 100,
-            # "schedule": "None",
             "grass_friction": 1,
             "sand_friction": 3,
             "ice_friction": 0.5,
             "animation_speed": 1,
+            "message": "Message Board",
         }
 
         self.default_hyperparameters = {
@@ -67,7 +67,6 @@ class CourseScene(AbstractScene):
             "max_episodes": 10,
             "max_iterations": 20,
             "initial_temperature": 100,
-            # "schedule": "None",
             "grass_friction": 1,
             "sand_friction": 3,
             "ice_friction": 0.5,
@@ -105,7 +104,6 @@ class CourseScene(AbstractScene):
                 f'Initial Temperature: {self.data["initial_temperature"]}+',
                 self.small_text_size,
             ],
-            # [f'Cooling Schedule: {self.data["schedule"]}', self.small_text_size],
             [f'Grass Friction: {self.data["grass_friction"]}+', self.small_text_size],
             [f'Sand Friction: {self.data["sand_friction"]}+', self.small_text_size],
             [f'Ice Friction: {self.data["ice_friction"]}+', self.small_text_size],
@@ -113,7 +111,7 @@ class CourseScene(AbstractScene):
                 f'_Animation Speed: {self.data["animation_speed"]}',
                 self.small_text_size,
             ],
-            ["_Message Board", self.medium_text_size],
+            [f'_{self.data["message"]}', self.small_text_size],
             ["_", self.small_text_size],
         ]
         self.data_area_obj = None
@@ -148,6 +146,9 @@ class CourseScene(AbstractScene):
         self.apply_button = import_assets(
             "assets/ui_apply_button.png", x_scale=73, y_scale=25
         )
+        self.default_button = import_assets(
+            "assets/ui_default_button.png", x_scale=73, y_scale=25
+        )
         self.grass = import_assets("assets/grass.png", x_scale=600, y_scale=600)
         self.ui_frame = import_assets(
             "assets/ui_frame.png", x_scale=600, y_scale=200, degree=90
@@ -161,8 +162,12 @@ class CourseScene(AbstractScene):
         self.text_box = import_assets(
             "assets/ui_text_box.png", alpha=True, x_scale=30, y_scale=15
         )
-        self.plus_icon = import_assets( "assets/ui_plus.png", alpha=True, x_scale=17, y_scale=17)
-        self.minus_icon = import_assets( "assets/ui_minus.png", alpha=True, x_scale=17, y_scale=8)
+        self.plus_icon = import_assets(
+            "assets/ui_plus.png", alpha=True, x_scale=17, y_scale=17
+        )
+        self.minus_icon = import_assets(
+            "assets/ui_minus.png", alpha=True, x_scale=17, y_scale=8
+        )
         self.game_objects = [
             GameObject(
                 id="grass",
@@ -245,20 +250,15 @@ class CourseScene(AbstractScene):
         padding = 10
         for i, (label, text_size) in enumerate(text_elements):
             add_text_box = False
-            add_dropdown = False
             if label[0] == "_":
                 draw.line(
                     self.data_area, (0, 0, 0), (0, last_y), (200, last_y), width=2
                 )
                 label = label.lstrip("_")
                 last_y += padding / 2
-            if label:
-                if label[-1] == "+":
-                    add_text_box = True
-                    label = label.rstrip("+")
-                if label[-1] == "*":
-                    add_dropdown = True
-                    label = label.rstrip("*")
+            if label and label[-1] == "+":
+                add_text_box = True
+                label = label.rstrip("+")
 
             FONT = font.SysFont("arial", text_size)
             text_surface = FONT.render(label, True, (0, 0, 0))
@@ -271,16 +271,15 @@ class CourseScene(AbstractScene):
             label = label.split(":")[0].replace(" ", "_").lower()
             if add_text_box:
                 self.add_text_box(text_rect.topright[1], label)
-            if add_dropdown:
-                self.add_dropdown(
-                    text_rect.topright[0] + padding, text_rect.topright[1], text_size
-                )
 
             last_y += text_size + padding / 2
 
         return last_y
 
     def add_text_box(self, y, text):
+        """
+        Adds textboxes to UI frame for interactable text input.
+        """
         x_padding = 535
         y_padding = 15
         text_box_obj = GameObject(
@@ -292,9 +291,6 @@ class CourseScene(AbstractScene):
         self.ui_objects[f"text_box_{text}"] = text_box_obj
         self.game_objects.append(text_box_obj)
 
-    def add_dropdown(self, x, y, text_size):
-        pass
-
     def add_buttons(self, last_y):
         """
         Add action buttons to the course scene.
@@ -302,8 +298,29 @@ class CourseScene(AbstractScene):
         padding = 415
         last_y += 3
         game_obj = add_ui_element(
+            "apply_button",
+            self.apply_button,
+            "Apply",
+            (padding, last_y),
+            text_size=self.medium_text_size,
+        )
+        self.ui_objects["apply_button"] = game_obj
+        self.game_objects.append(game_obj)
+
+        game_obj = add_ui_element(
+            "default_button",
+            self.default_button,
+            "Default",
+            (padding + 77, last_y),
+            text_size=self.medium_text_size,
+        )
+        self.ui_objects["default_button"] = game_obj
+        self.game_objects.append(game_obj)
+
+        last_y += 28
+        game_obj = add_ui_element(
             "back_to_course",
-            self.small_blue_button,
+            self.blue_button,
             "Courses",
             (padding, last_y),
             text_size=self.medium_text_size,
@@ -311,17 +328,7 @@ class CourseScene(AbstractScene):
         self.ui_objects["back_to_course"] = game_obj
         self.game_objects.append(game_obj)
 
-        game_obj = add_ui_element(
-            "apply_button",
-            self.apply_button,
-            "Apply",
-            (padding + 77, last_y),
-            text_size=self.medium_text_size,
-        )
-        self.ui_objects["apply_button"] = game_obj
-        self.game_objects.append(game_obj)
-
-        last_y += 30
+        last_y += 28
         game_obj = add_ui_element(
             "simulate_button",
             self.orange_button,
@@ -333,7 +340,7 @@ class CourseScene(AbstractScene):
         self.ui_objects["simulate_button"] = game_obj
         self.game_objects.append(game_obj)
 
-        last_y += 30
+        last_y += 28
         game_obj = add_ui_element(
             "prev_hole",
             self.small_blue_button,
@@ -356,7 +363,7 @@ class CourseScene(AbstractScene):
         self.ui_objects["next_hole"] = game_obj
         self.game_objects.append(game_obj)
 
-        last_y = self.data_val_coords[-1][1] - 28
+        last_y = self.data_val_coords[-1][1] - 25
         game_obj = add_ui_element(
             "plus_button",
             self.plus_icon,
@@ -366,7 +373,7 @@ class CourseScene(AbstractScene):
         )
         self.ui_objects["plus_button"] = game_obj
         self.game_objects.append(game_obj)
-        
+
         last_y += 5
         game_obj = add_ui_element(
             "minus_button",
@@ -429,6 +436,7 @@ class CourseScene(AbstractScene):
                 if ui_id == "simulate_button" and self.simulation_mode:
                     self.click_simulate(ui_id)
                 elif ui_id == "back_to_course":
+                    self.data["message"] = ""
                     self.scene_manager.switch_scene("course_select")
                 elif ui_id == "next_hole":
                     self.click_next_hole(ui_id)
@@ -440,21 +448,32 @@ class CourseScene(AbstractScene):
                     self.handle_text_box_click(ui_id)
                 elif ui_id == "apply_button":
                     self.click_apply_button()
+                elif ui_id == "default_button":
+                    self.click_apply_button(default=True)
                 elif ui_id == "plus_button":
-                    self.data["animation_speed"] = min(self.data["animation_speed"] + 0.5, 3)
+                    self.data["animation_speed"] = min(
+                        self.data["animation_speed"] + 0.5, 2
+                    )
                     self.scene_manager.fps_multiplier = self.data["animation_speed"]
                 elif ui_id == "minus_button":
-                    self.data["animation_speed"] = max(self.data["animation_speed"] - 0.5, 0.5)
+                    self.data["animation_speed"] = max(
+                        self.data["animation_speed"] - 0.5, 0.5
+                    )
                     self.scene_manager.fps_multiplier = self.data["animation_speed"]
 
     def click_simulate(self, ui_id):
+        """
+        Function run on click of simulate button.
+        """
         if not self.simulation_started:
             self.simulation_started = True
-            self.current_hole.num_episodes = 1
+            self.current_hole.episode_num = 1
             self.click_apply_button()
+            self.data["message"] = "Simulation Started."
             self.ui_objects[ui_id].edit_text("End Simulation")
             self.current_hole.simulate()
         else:
+            self.data["message"] = ""
             self.simulation_started = False
             self.current_hole.simulation_started = False
             if self.current_hole.SA:
@@ -463,6 +482,14 @@ class CourseScene(AbstractScene):
             self.ui_objects[ui_id].edit_text("Start Simulation")
 
     def click_next_hole(self, ui_id):
+        """
+        Move to next hole, or end course when possible.
+        """
+        self.simulation_started = False
+        self.current_hole.simulation_started = False
+        self.ui_objects["simulate_button"].edit_text("Start Simulation")
+        self.data["message"] = ""
+
         if self.ui_objects[ui_id].get_text() == "Next Hole":
             next_hole_id = "hole" + str(
                 int(self.current_hole.hole_id.lstrip("hole")) + 1
@@ -472,12 +499,24 @@ class CourseScene(AbstractScene):
             self.scene_manager.switch_scene("course_select")
 
     def click_prev_hole(self):
+        """
+        Move back to the previous completed hole.
+        """
+        self.simulation_started = False
+        self.current_hole.simulation_started = False
+        self.ui_objects["simulate_button"].edit_text("Start Simulation")
+        self.data["message"] = ""
+
         prev_hole_id = "hole" + str(int(self.current_hole.hole_id.lstrip("hole")) - 1)
         self.switch_hole(prev_hole_id)
         self.ui_objects["next_hole"].enable_ui()
         self.ui_objects["next_hole"].edit_text("Next Hole")
 
     def click_bot_button(self):
+        """
+        Replay the best bot score path.
+        """
+        self.data["message"] = "Replaying best bot game."
         self.simulation_started = False
         self.current_hole.simulation_started = False
         self.ui_objects["simulate_button"].edit_text("Start Simulation")
@@ -488,7 +527,11 @@ class CourseScene(AbstractScene):
         ) = self.current_hole.hole_data["best_bot_params"]
         self.current_hole.retrace_bot_path()
 
-    def click_apply_button(self):
+    def click_apply_button(self, default=False):
+        """
+        Apply the values modified by user to the hyperparameters.
+        """
+        self.data["message"] = "Applied Hyperparameters"
         if self.simulation_mode:
             text_boxes = [
                 ui_obj
@@ -505,11 +548,12 @@ class CourseScene(AbstractScene):
         for text_box in text_boxes:
             text_value = text_box.get_text()
             data_key = text_box.id.lstrip("text_box_")
-            self.data[data_key] = (
-                float(text_value)
-                if text_value
-                else self.default_hyperparameters[data_key]
-            )
+            if default:
+                self.data[data_key] = self.default_hyperparameters[data_key]
+            else:
+                self.data[data_key] = (
+                    float(text_value) if text_value else self.data[data_key]
+                )
 
         for text_box in text_boxes:
             text_box.edit_text("")
@@ -528,11 +572,17 @@ class CourseScene(AbstractScene):
         self.current_hole.add_golf_ball()
 
     def handle_text_box_click(self, ui_id):
+        """
+        Handling clicking on a textbox object.
+        """
         if not (ui_id.endswith("friction") or self.simulation_mode):
             return
         self.active_text_box = self.ui_objects[ui_id]
 
     def handle_keyboard_input(self, event):
+        """
+        If textbox is active take user input and save it.
+        """
         if not self.active_text_box:
             return
 
@@ -617,7 +667,7 @@ class CourseScene(AbstractScene):
         self.data["grass_friction"] = min(self.data["grass_friction"], 10)
         self.data["sand_friction"] = min(self.data["sand_friction"], 10)
         self.data["ice_friction"] = min(self.data["ice_friction"], 10)
-        self.data["score_threshold"] = min(self.data["score_threshold"], 50)
+        self.data["score_threshold"] = min(self.data["score_threshold"], 100)
         self.data["max_episodes"] = min(self.data["max_episodes"], 50)
         self.data["max_iterations"] = min(self.data["max_iterations"], 25)
         self.data["initial_temperature"] = min(self.data["initial_temperature"], 200)
@@ -653,12 +703,11 @@ class CourseScene(AbstractScene):
                 f'Initial Temperature: {self.data["initial_temperature"]}',
                 self.small_text_size,
             ],
-            # [f'Cooling Schedule: {self.data["schedule"]}', self.small_text_size],
             [f'Grass Friction: {self.data["grass_friction"]}', self.small_text_size],
             [f'Sand Friction: {self.data["sand_friction"]}', self.small_text_size],
             [f'Ice Friction: {self.data["ice_friction"]}', self.small_text_size],
             [f'_Animation Speed: {self.data["animation_speed"]}', self.small_text_size],
-            ["_Message Board", self.medium_text_size],
+            [f'_{self.data["message"]}', self.small_text_size],
             ["_", self.small_text_size],
         ]
 
@@ -693,7 +742,7 @@ class HoleScene(CourseScene):
         self.simulation_started = False
         self.SA = None
         self.episode_num = 1
-        self.max_episodes = 3
+        self.max_episodes = 10
 
         self.game_objects = []
         self.golf_ball = None
@@ -904,6 +953,8 @@ class HoleScene(CourseScene):
             self.golf_ball.loop()
             if self.golf_ball.in_hole:
                 self.hole_complete = True
+                message = f"Hole completed with {self.score} shots."
+                self.course.data["message"] = message
 
         if (
             self.SA
@@ -919,21 +970,33 @@ class HoleScene(CourseScene):
                 or self.score > self.course.data["score_threshold"] - 1
             ):
                 self.hole_complete = True
-                self.golf_ball = self.SA.final_ball
+                self.golf_ball = (
+                    self.SA.final_ball
+                    if self.SA.final_ball
+                    else self.SA.current_golf_ball
+                )
                 self.simulation_started = False
                 self.simulate()
-                print(f"Episode {self.episode_num} completed with score {self.score}.")
+
+                if self.score > self.course.data["score_threshold"] - 1:
+                    message = f"Episode {self.episode_num}: Score threshold limit."
+                else:
+                    message = f"Episode {self.episode_num} completed with score {self.score-1}."
+                self.course.data["message"] = message
+
                 self.episode_num += 1
             else:
                 self.hole_complete = False
 
         if self.episode_num > self.max_episodes and self.simulation_mode:
-            print(f"Simulation ended after {self.episode_num} episodes.")
+            message = f"Simulation ended after {self.episode_num-1} episodes."
+            self.course.data["message"] = message
             self.episode_num = 1
             self.simulation_started = False
             self.game_objects.remove(self.SA)
             self.SA = None
             self.course.ui_objects["simulate_button"].edit_text("Start Simulation")
+            self.course.simulation_started = False
 
         self.update_course_data()
 
@@ -966,14 +1029,14 @@ class HoleScene(CourseScene):
         self.SA.surface_strength["sand"] = float(self.course.data["sand_friction"])
         self.SA.surface_strength["ice"] = float(self.course.data["ice_friction"])
         self.SA.initial_temperature = float(self.course.data["initial_temperature"])
-        # self.SA.cooling_schedule = self.course.data["cooling_schedule"]
+        self.SA.temperature = float(self.course.data["initial_temperature"])
+        self.course.data["score_threshold"] = self.course.data["best_bot_score"]
 
     def update_course_data(self):
         """
         Update the course scene data for each upate cycle by setting the
         hole info for the interested keys.
         """
-
         self.course.data["cur_score"] = self.score
         self.course.data["best_score"] = self.hole_data["best_score"]
         self.course.data["best_bot_score"] = self.hole_data["best_bot_score"]
@@ -1027,7 +1090,6 @@ class HoleScene(CourseScene):
         """
         Utility function to calculate distance from hole for given golf ball.
         """
-
         if golf_ball.in_hole:
             return 0
         else:
@@ -1048,7 +1110,8 @@ class HoleScene(CourseScene):
 
         self.path = self.hole_data.get("best_bot_path", [])[:]
         if not self.path:
-            print("No bot path data available for this hole.")
+            message = "No bot path data available for this hole."
+            self.course.data["message"] = message
             return
 
         self.retrace_mode = True

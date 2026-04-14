@@ -1,6 +1,9 @@
 from abstract_scene import *
 from pygame import quit, MOUSEBUTTONUP
 
+BROWN_TINT = (245, 222, 179)
+
+
 class MainMenuScene(AbstractScene):
     """
     Starting scene when the game opens.
@@ -48,19 +51,19 @@ class MainMenuScene(AbstractScene):
         Adds UI buttons to scene.
         """
         game_object = add_ui_element("start_button", self.ui_banner, "Start", (20, 250))
-        game_object.special_tint((245, 222, 179))
+        game_object.special_tint(BROWN_TINT)
         self.ui_objects["start_button"] = game_object
         self.game_objects.append(game_object)
 
         game_object = add_ui_element(
             "tutorial_button", self.ui_banner, "Tutorial", (20, 330)
         )
-        game_object.special_tint((245, 222, 179))
+        game_object.special_tint(BROWN_TINT)
         self.ui_objects["tutorial_button"] = game_object
         self.game_objects.append(game_object)
 
         game_object = add_ui_element("quit_button", self.ui_banner, "Quit", (20, 410))
-        game_object.special_tint((245, 222, 179))
+        game_object.special_tint(BROWN_TINT)
         self.ui_objects["quit_button"] = game_object
         self.game_objects.append(game_object)
 
@@ -75,12 +78,10 @@ class MainMenuScene(AbstractScene):
             ui_rect = ui_obj.surface.get_rect(topleft=ui_obj.pos)
             if ui_rect.collidepoint(mouse_pos):
                 if ui_id == "start_button":
-                    print("Course Select")
                     self.scene_manager.switch_scene("course_select")
                 elif ui_id == "tutorial_button":
-                    print("Show Tutorial!")
+                    self.scene_manager.switch_scene("tutorial")
                 elif ui_id == "quit_button":
-                    print("Quit Game!")
                     quit()
                     exit()
 
